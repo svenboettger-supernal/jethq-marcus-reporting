@@ -135,7 +135,12 @@ if (document.getElementById('dashboard') && !document.getElementById('dashboard'
 function renderMeta() {
   const m = state.data.meta;
   const k = state.data.kpis;
-  document.getElementById('meta-period').textContent = fmtDateRange(k.recent_window.start, k.recent_window.end);
+  // Validation period spans all rounds, not just the recent window.
+  const allStarts = state.data.round_summaries.map((r) => r.time_range.start).filter(Boolean);
+  const allEnds = state.data.round_summaries.map((r) => r.time_range.end).filter(Boolean);
+  const periodStart = allStarts.length ? allStarts.sort()[0] : k.recent_window.start;
+  const periodEnd = allEnds.length ? allEnds.sort().slice(-1)[0] : k.recent_window.end;
+  document.getElementById('meta-period').textContent = fmtDateRange(periodStart, periodEnd);
   document.getElementById('meta-sample').textContent = `${fmtNumber(k.overall_denominator)} curated validations · ${fmtNumber(k.total_updates_recent_window)} recent updates`;
   const gen = new Date(m.generated_at);
   const genStr = gen.toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' });
@@ -205,7 +210,7 @@ function bindGlobalFilters() {
   const update = (k, v) => {
     state.filters[k] = v;
     writeQS();
-    rerenderFiltered();
+    renderExplorer();
   };
   document.getElementById('filter-round').addEventListener('change', (e) => update('round', e.target.value));
   document.getElementById('filter-class').addEventListener('change', (e) => update('classification', e.target.value));
@@ -217,15 +222,10 @@ function bindGlobalFilters() {
     document.getElementById('filter-class').value = '';
     document.getElementById('filter-verdict').value = '';
     writeQS();
-    rerenderFiltered();
+    renderExplorer();
   };
   reset.addEventListener('click', doReset);
   reset.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') doReset(); });
-}
-
-function rerenderFiltered() {
-  renderAllCharts();
-  renderExplorer();
 }
 
 /* ---------- Filter helpers ---------- */
@@ -252,10 +252,6 @@ function renderAllCharts() {
   renderVolumeChart();
   renderBreakdownChart();
   renderAccuracyByClassChart();
-  renderHourChart();
-  renderDowChart();
-  renderDateChart();
-  renderConfidenceChart();
 }
 
 function resizeCharts() {
@@ -457,9 +453,14 @@ function renderBreakdownChart() {
     const idx = values.length - 1 - p.dataIndex;
     const cls = raw[idx];
     state.filters.classification = state.filters.classification === cls ? '' : cls;
-    document.getElementById('filter-class').value = state.filters.classification;
+    const sel = document.getElementById('filter-class');
+    if (sel) sel.value = state.filters.classification;
     writeQS();
-    rerenderFiltered();
+    renderBreakdownChart();
+    renderExplorer();
+    // Jump down to the explorer so it's clear what the click did.
+    const target = document.getElementById('explorer');
+    if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
   });
 }
 
@@ -520,137 +521,6 @@ function renderAccuracyByClassChart() {
     graphic: [{
       type: 'text', right: 8, bottom: 4,
       style: { text: '* low sample (n<5)', fill: VIZ.muted, fontSize: 11, fontFamily: 'Inter, sans-serif' },
-    }],
-  });
-}
-
-function renderHourChart() {
-  const chart = ensureChart('chart-by-hour'); if (!chart) return;
-  const rows = filteredValidatedRows();
-  const buckets = aggregateByKey(rows, (r) => r.time ? new Date(r.time).getHours() : null);
-  const labels = Array.from({length: 24}, (_, h) => String(h).padStart(2,'0'));
-  const values = labels.map((h) => buckets[Number(h)] || null);
-  miniAccuracyChart(chart, labels, values, 'h', false);
-}
-
-function renderDowChart() {
-  const chart = ensureChart('chart-by-dow'); if (!chart) return;
-  const rows = filteredValidatedRows();
-  const buckets = aggregateByKey(rows, (r) => r.time ? new Date(r.time).getDay() : null);
-  // Convert Sunday (0) to be last
-  const order = [1,2,3,4,5,6,0];
-  const labels = order.map((d) => DAYS[d === 0 ? 6 : d - 1]);
-  const values = order.map((d) => buckets[d] || null);
-  miniAccuracyChart(chart, labels, values, '', false);
-}
-
-function renderDateChart() {
-  const chart = ensureChart('chart-by-date'); if (!chart) return;
-  const rows = filteredValidatedRows();
-  const buckets = aggregateByKey(rows, (r) => r.time ? r.time.slice(0,10) : null);
-  const dates = Object.keys(buckets).sort();
-  const labels = dates;
-  const values = dates.map((d) => buckets[d]);
-  miniAccuracyChart(chart, labels, values, '', true);
-}
-
-function aggregateByKey(rows, keyFn) {
-  const out = {};
-  rows.forEach((r) => {
-    const k = keyFn(r);
-    if (k === null || k === undefined) return;
-    const b = out[k] || (out[k] = { correct: 0, half: 0, incorrect: 0, n: 0 });
-    b.n++;
-    if (r.verdict === 'Correct') b.correct++;
-    else if (r.verdict === 'Half Correct') b.half++;
-    else b.incorrect++;
-  });
-  return out;
-}
-
-function miniAccuracyChart(chart, labels, buckets, suffix, dateAxis) {
-  const accValues = buckets.map((b) => b ? Number(((b.correct / b.n) * 100).toFixed(2)) : null);
-  const nValues   = buckets.map((b) => b ? b.n : 0);
-
-  chart.setOption({
-    ...ECHART_BASE,
-    grid: { left: 40, right: 16, top: 24, bottom: dateAxis ? 28 : 24, containLabel: true },
-    tooltip: {
-      ...ECHART_BASE.tooltip,
-      trigger: 'axis', axisPointer: { type: 'shadow' },
-      formatter: (params) => {
-        if (!params || !params.length) return '';
-        const i = params[0].dataIndex;
-        const b = buckets[i];
-        if (!b) return `<div>${escapeHtml(labels[i])}${suffix}</div><div style="color:${VIZ.muted};">no validated samples</div>`;
-        return `<div style="font-weight:500;">${escapeHtml(labels[i])}${suffix ? ' '+suffix : ''}</div>
-                <div>Strict: <strong>${b.n ? fmtPercent((b.correct/b.n)*100) : '—'}</strong></div>
-                <div style="color:${VIZ.muted};">n=${b.n} · Correct ${b.correct} · Half ${b.half} · Incorrect ${b.incorrect}</div>`;
-      },
-    },
-    xAxis: {
-      type: 'category', data: labels,
-      axisLine: { lineStyle: { color: VIZ.border } },
-      axisTick: { show: false },
-      axisLabel: {
-        color: VIZ.muted, fontSize: 10,
-        interval: dateAxis ? 'auto' : 0,
-        formatter: dateAxis ? (v) => v.slice(5) : (v) => v + (suffix ? '' : ''),
-        rotate: dateAxis && labels.length > 14 ? 35 : 0,
-      },
-    },
-    yAxis: [
-      {
-        type: 'value', min: 0, max: 100,
-        axisLine: { show: false }, axisTick: { show: false },
-        splitLine: { lineStyle: { color: VIZ.border, type: 'dashed' } },
-        axisLabel: { color: VIZ.muted, formatter: (v) => v + '%', fontSize: 10 },
-      },
-    ],
-    series: [
-      {
-        name: 'Accuracy', type: 'bar',
-        data: accValues.map((v, i) => ({
-          value: v,
-          itemStyle: { color: v === null ? 'hsla(33,10%,34%,0.15)' : v >= 95 ? VIZ.base[4] : v >= 80 ? VIZ.base[1] : VIZ.error, borderRadius: [3, 3, 0, 0] },
-        })),
-        barMaxWidth: 18,
-      },
-    ],
-  });
-}
-
-function renderConfidenceChart() {
-  const chart = ensureChart('chart-confidence'); if (!chart) return;
-  const cd = state.data.confidence_distribution;
-  const labels = cd.buckets.map((b) => b.label);
-  const values = cd.buckets.map((b) => b.count);
-  chart.setOption({
-    ...ECHART_BASE,
-    grid: { left: 40, right: 16, top: 24, bottom: 36, containLabel: true },
-    tooltip: { ...ECHART_BASE.tooltip, trigger: 'axis', axisPointer: { type: 'shadow' } },
-    xAxis: {
-      type: 'category', data: labels,
-      axisLine: { lineStyle: { color: VIZ.border } }, axisTick: { show: false },
-      axisLabel: { color: VIZ.muted, fontSize: 10, rotate: 30 },
-    },
-    yAxis: {
-      type: 'value', name: 'Rules', nameTextStyle: { color: VIZ.muted, fontSize: 11 },
-      axisLine: { show: false }, axisTick: { show: false },
-      splitLine: { lineStyle: { color: VIZ.border, type: 'dashed' } },
-      axisLabel: { color: VIZ.muted, fontSize: 10 },
-    },
-    series: [{
-      name: 'Classifier rules', type: 'bar',
-      data: values.map((v, i) => ({ value: v, itemStyle: { color: i < 5 ? VIZ.warning : VIZ.base[2], borderRadius: [3, 3, 0, 0] } })),
-      barMaxWidth: 28,
-    }],
-    graphic: [{
-      type: 'text', right: 0, top: 0,
-      style: {
-        text: `mean ${cd.mean.toFixed(3)} · median ${cd.median.toFixed(3)}`,
-        fill: VIZ.muted, fontSize: 11, fontFamily: 'Inter, sans-serif',
-      },
     }],
   });
 }

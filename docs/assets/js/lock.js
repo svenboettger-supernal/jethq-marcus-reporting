@@ -22,8 +22,10 @@ function reveal() {
 
 function bindShake() {
   const lock = document.getElementById("lockscreen");
+  const err = document.getElementById("lock-error");
   if (!lock) return;
-  lock.classList.add("shake", "error-shown");
+  lock.classList.add("shake");
+  if (err) err.hidden = false;
   setTimeout(() => lock.classList.remove("shake"), 500);
 }
 

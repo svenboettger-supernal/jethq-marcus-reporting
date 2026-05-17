@@ -1,6 +1,7 @@
 /* Base */
 * { box-sizing: border-box; }
 
+html { scroll-behavior: smooth; }
 html, body {
   margin: 0;
   padding: 0;
@@ -126,32 +127,43 @@ input:focus, select:focus {
 .section-nav a:hover { background: var(--bg-muted); color: var(--fg); }
 .section-nav a.active { color: var(--fg); background: var(--bg-muted); }
 
-/* Global filter bar */
-.filter-bar {
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  padding: 16px 20px;
+/* Explorer-scoped filters (sit directly above the validation table) */
+.explorer-filters {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 12px 20px;
-  margin: 24px 0;
+  gap: 12px 18px;
+  padding: 14px 18px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
 }
-.filter-bar > .filter-label {
+.explorer-filters > .filter-label {
   font-size: 12px;
   color: var(--fg-muted);
   text-transform: uppercase;
   letter-spacing: 0.06em;
+  font-weight: 500;
 }
-.filter-bar select { min-width: 160px; }
-.filter-bar .reset-link {
-  margin-left: auto;
+.explorer-filters label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
   font-size: 13px;
-  color: var(--fg-muted);
-  cursor: pointer;
 }
-.filter-bar .reset-link:hover { color: var(--action); }
+.explorer-filters label .filter-name {
+  color: var(--fg-muted);
+}
+.explorer-filters select { min-width: 160px; }
+.explorer-filters button.ghost {
+  margin-left: auto;
+  background: transparent;
+  border: 1px solid var(--border);
+}
+.explorer-filters button.ghost:hover {
+  background: var(--action-subtle);
+  border-color: var(--border-strong);
+}
 
 /* Section */
 section.report-section {
@@ -428,7 +440,7 @@ table.explorer-table .expand-toggle:hover { color: var(--action); }
   display: inline-block;
 }
 
-/* Lock screen */
+/* Lock screen — matches heritage-proposals layout */
 .lockscreen {
   position: fixed;
   inset: 0;
@@ -437,71 +449,90 @@ table.explorer-table .expand-toggle:hover { color: var(--action); }
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 24px;
+  padding: 32px;
 }
 .lockscreen .lock-card {
   width: 100%;
-  max-width: 420px;
+  max-width: 360px;
   background: var(--card);
   border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  padding: 36px 32px;
-  text-align: left;
-  box-shadow: var(--shadow-card);
+  border-radius: 12px;
+  padding: 36px 32px 32px;
+  text-align: center;
+  box-shadow: 0 10px 15px rgba(0,0,0,0.05), 0 4px 6px rgba(0,0,0,0.04);
 }
-.lockscreen .eyebrow {
-  font-family: var(--font-mono);
-  font-size: 11px;
-  color: var(--fg-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 28px;
+.lockscreen .lock-logo {
+  width: 144px;
+  height: 24px;
+  margin: 0 auto 22px;
+  background-image: url("../img/supernal-logo.svg");
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
 }
-.lockscreen .eyebrow .dot {
-  width: 7px;
-  height: 7px;
-  border-radius: 2px;
-  background: var(--action);
-}
-.lockscreen h1 {
-  font-size: 28px;
-  line-height: 1.2;
-  margin-bottom: 8px;
-}
-.lockscreen p.subtitle {
+.lockscreen .lock-subtitle {
   color: var(--fg-muted);
   font-size: 14px;
-  margin-bottom: 28px;
+  line-height: 1.5;
+  margin: 0 0 24px;
 }
-.lockscreen label {
-  display: block;
-  font-size: 12px;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--fg-muted);
-  margin-bottom: 6px;
-}
-.lockscreen input[type="password"] {
-  width: 100%;
-  font-size: 15px;
-}
-.lockscreen .actions {
+.lockscreen .lock-form {
   display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-top: 16px;
+  flex-direction: column;
+  gap: 10px;
 }
-.lockscreen button.primary { width: 100%; padding: 0.6rem 1rem; font-size: 14.5px; }
-.lockscreen .error {
-  display: none;
-  margin-top: 12px;
-  font-size: 13px;
+.lockscreen #lockpw {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px 14px;
+  font-family: var(--font-sans);
+  font-size: 14px;
+  width: 100%;
+  box-shadow: var(--shadow-input);
+  text-align: center;
+  letter-spacing: 0.04em;
+  color: var(--fg);
+}
+.lockscreen #lockpw::placeholder {
+  color: var(--fg-placeholder);
+  letter-spacing: 0.04em;
+}
+.lockscreen #lockpw:focus {
+  outline: 2px solid var(--action);
+  outline-offset: 2px;
+  border-color: var(--action);
+}
+.lockscreen .lock-button {
+  background: var(--action);
+  color: var(--action-fg);
+  border: none;
+  border-radius: 9999px;
+  padding: 11px 22px;
+  font-family: var(--font-sans);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  letter-spacing: 0.01em;
+  transition: background-color 200ms ease;
+}
+.lockscreen .lock-button:hover { background: var(--action-hover); }
+.lockscreen .lock-error {
   color: var(--error-fg);
+  font-size: 12px;
+  margin: 14px 0 0;
 }
-.lockscreen.error-shown .error { display: block; }
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
 @keyframes shake {
   10%, 90% { transform: translateX(-1px); }
   20%, 80% { transform: translateX(2px); }

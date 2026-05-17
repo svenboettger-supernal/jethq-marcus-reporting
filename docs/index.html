@@ -16,19 +16,17 @@
 <body class="lock-active">
 
 <!-- LOCK SCREEN -->
-<div id="lockscreen" class="lockscreen">
+<div id="lockscreen" class="lockscreen" role="dialog" aria-modal="true" aria-labelledby="lock-title">
   <div class="lock-card">
-    <div class="eyebrow"><span class="dot"></span> Supernal · Restricted Report</div>
-    <h1>Marcus — Accuracy &amp; Performance Report</h1>
-    <p class="subtitle">Prepared by Supernal for JetHQ. Enter the password to view.</p>
-    <form id="lockform" autocomplete="off">
-      <label for="lockpw">Password</label>
-      <input id="lockpw" type="password" autocomplete="off" autofocus required spellcheck="false" />
-      <div class="actions">
-        <button type="submit" class="primary">Unlock</button>
-      </div>
-      <div class="error" role="alert">Incorrect password.</div>
+    <div class="lock-logo" role="img" aria-label="Supernal"></div>
+    <h1 id="lock-title" class="visually-hidden">Marcus — Accuracy &amp; Performance Report</h1>
+    <p class="lock-subtitle">Enter the password to view.</p>
+    <form id="lockform" class="lock-form" autocomplete="off">
+      <label for="lockpw" class="visually-hidden">Password</label>
+      <input id="lockpw" type="password" placeholder="Password" autocomplete="off" autofocus required spellcheck="false" />
+      <button type="submit" class="lock-button">Unlock</button>
     </form>
+    <p id="lock-error" class="lock-error" hidden>Incorrect password.</p>
   </div>
 </div>
 
@@ -55,7 +53,6 @@
       <a href="#volume">Daily volume</a>
       <a href="#breakdown">Classifications</a>
       <a href="#accuracy-class">Accuracy by class</a>
-      <a href="#errors">Where errors hide</a>
       <a href="#why">Why flags revert</a>
       <a href="#explorer">Validation explorer</a>
       <a href="#classifier">Classifier rules</a>
@@ -64,33 +61,6 @@
   </nav>
 
   <div class="container">
-
-    <!-- GLOBAL FILTERS -->
-    <div class="filter-bar" aria-label="Global filters">
-      <span class="filter-label">Filter</span>
-      <label class="muted" style="font-size:12px;">
-        Round
-        <select id="filter-round" aria-label="Round filter">
-          <option value="">All rounds</option>
-        </select>
-      </label>
-      <label class="muted" style="font-size:12px;">
-        Classification
-        <select id="filter-class" aria-label="Classification filter">
-          <option value="">All classifications</option>
-        </select>
-      </label>
-      <label class="muted" style="font-size:12px;">
-        Verdict
-        <select id="filter-verdict" aria-label="Verdict filter">
-          <option value="">Any verdict</option>
-          <option value="Correct">Correct</option>
-          <option value="Half Correct">Half Correct</option>
-          <option value="Incorrect">Incorrect</option>
-        </select>
-      </label>
-      <span class="reset-link" id="filter-reset" role="button" tabindex="0">Reset</span>
-    </div>
 
     <!-- HEADLINE KPI STRIP -->
     <section id="headline" class="report-section">
@@ -131,11 +101,11 @@
     <section id="breakdown" class="report-section">
       <header class="section-head">
         <h2>Classifications</h2>
-        <p class="lede">What kinds of updates Marcus is making. Click any bar to filter every chart and table on the page.</p>
+        <p class="lede">What kinds of updates Marcus is making. Click any bar to filter the validation explorer to that classification.</p>
       </header>
       <div class="chart-wrap">
         <h3>Update volume by classification</h3>
-        <p class="chart-sub">Recent window only. Click a bar to filter; click again to clear.</p>
+        <p class="chart-sub">Recent window only. Click a bar to drill into the validation explorer below; click again to clear.</p>
         <div id="chart-breakdown" class="chart-canvas" style="min-height:560px;"></div>
       </div>
     </section>
@@ -153,36 +123,6 @@
       </div>
     </section>
 
-    <!-- WHERE ERRORS HIDE -->
-    <section id="errors" class="report-section">
-      <header class="section-head">
-        <h2>Where errors hide</h2>
-        <p class="lede">Four cuts of the validated sample: time of day, day of week, date, and where confidence scores cluster.</p>
-      </header>
-      <div class="chart-grid-4">
-        <div class="chart-wrap">
-          <h3>Accuracy by hour of day</h3>
-          <p class="chart-sub">Hour buckets across validated samples.</p>
-          <div id="chart-by-hour" class="chart-canvas"></div>
-        </div>
-        <div class="chart-wrap">
-          <h3>Accuracy by day of week</h3>
-          <p class="chart-sub">Mon–Sun across validated samples.</p>
-          <div id="chart-by-dow" class="chart-canvas"></div>
-        </div>
-        <div class="chart-wrap">
-          <h3>Accuracy by date</h3>
-          <p class="chart-sub">Daily strict accuracy for dates with at least one validated sample.</p>
-          <div id="chart-by-date" class="chart-canvas"></div>
-        </div>
-        <div class="chart-wrap">
-          <h3>Classifier confidence distribution</h3>
-          <p class="chart-sub">From the Classifications reference table. Most rules score above 0.95.</p>
-          <div id="chart-confidence" class="chart-canvas"></div>
-        </div>
-      </div>
-    </section>
-
     <!-- WHY FLAGS GET REVERTED -->
     <section id="why" class="report-section">
       <header class="section-head">
@@ -196,9 +136,34 @@
     <section id="explorer" class="report-section">
       <header class="section-head">
         <h2>Validation explorer</h2>
-        <p class="lede">Every validated row across all rounds. Search by alert text, aircraft, or notes. Click a row to expand.</p>
+        <p class="lede">Every validated row across all rounds. Filter, search by alert text or notes, sort columns, and click a row to expand the full notes and hub link.</p>
       </header>
       <div class="explorer">
+        <div class="explorer-filters" aria-label="Filter the validation table">
+          <span class="filter-label">Filter table</span>
+          <label>
+            <span class="filter-name">Round</span>
+            <select id="filter-round" aria-label="Round">
+              <option value="">All rounds</option>
+            </select>
+          </label>
+          <label>
+            <span class="filter-name">Classification</span>
+            <select id="filter-class" aria-label="Classification">
+              <option value="">All classifications</option>
+            </select>
+          </label>
+          <label>
+            <span class="filter-name">Verdict</span>
+            <select id="filter-verdict" aria-label="Verdict">
+              <option value="">Any verdict</option>
+              <option value="Correct">Correct</option>
+              <option value="Half Correct">Half Correct</option>
+              <option value="Incorrect">Incorrect</option>
+            </select>
+          </label>
+          <button type="button" id="filter-reset" class="ghost">Reset</button>
+        </div>
         <div class="table-toolbar">
           <input id="explorer-search" type="search" placeholder="Search alert text, make/model, or notes…" />
           <button id="explorer-export" type="button">Export CSV</button>
