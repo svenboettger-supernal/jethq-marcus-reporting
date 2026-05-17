@@ -426,18 +426,17 @@ table.explorer-table .expand-toggle:hover { color: var(--action); }
 .page-footer .supernal-mark {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   font-family: var(--font-display);
   font-size: 16px;
   color: var(--fg);
   font-weight: 600;
 }
-.page-footer .supernal-mark .dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 2px;
-  background: var(--action);
-  display: inline-block;
+.page-footer .supernal-mark img {
+  display: block;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
 }
 
 /* Lock screen — matches heritage-proposals layout */
