@@ -157,7 +157,6 @@ function renderKPIs() {
     { label: 'Validated samples', value: fmtNumber(k.total_validated_all_rounds), sub: 'across all rounds' },
     { label: 'Distinct classifications', value: fmtNumber(k.distinct_classifications_uv), sub: `${fmtNumber(k.distinct_classifications_all)} in classifier ruleset` },
     { label: 'Unique aircraft touched', value: fmtNumber(k.distinct_aircraft_uv), sub: 'in the recent window' },
-    { label: 'Accuracy uplift', value: `+${fmtPercent(k.improvement_pp_vs_round_1, 2)}`, sub: 'pp, Round 1 → Final' },
   ];
   const grid = document.getElementById('kpi-grid');
   grid.innerHTML = items.map((it) => `

@@ -192,6 +192,7 @@ section.report-section .lede {
   min-height: 132px;
 }
 .kpi.headline { grid-column: span 2; background: var(--card); }
+.kpi:not(.headline) { grid-column: span 1; }
 .kpi .label {
   font-size: 12px;
   text-transform: uppercase;
