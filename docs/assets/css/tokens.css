@@ -1,0 +1,67 @@
+:root {
+  /* Page surfaces */
+  --bg: hsl(33 20% 97%);
+  --bg-muted: hsl(33 22% 89%);
+  --card: hsl(30 8% 99%);
+  --sidebar: hsl(33 22% 87%);
+
+  /* Text */
+  --fg: hsl(33 4% 6%);
+  --fg-muted: hsl(33 10% 34%);
+  --fg-placeholder: hsl(33 12% 50%);
+
+  /* Borders */
+  --border: hsl(33 18% 80%);
+  --border-strong: hsl(33 14% 67%);
+
+  /* Action */
+  --action: hsl(167 16% 48%);
+  --action-hover: hsl(167 14% 34%);
+  --action-subtle: hsl(167 14% 90%);
+  --action-fg: hsl(0 0% 100%);
+
+  /* Status */
+  --success-bg: hsl(139 76% 97%);
+  --success-fg: hsl(142 72% 29%);
+  --success-border: hsl(141 79% 85%);
+  --warning-bg: hsl(48 100% 96%);
+  --warning-fg: hsl(26 91% 37%);
+  --warning-border: hsl(48 97% 77%);
+  --error-bg: hsl(0 86% 97%);
+  --error-fg: hsl(6 63% 46%);
+  --error-border: hsl(0 96% 89%);
+  --info-bg: hsl(214 99% 97%);
+  --info-fg: hsl(204 64% 44%);
+  --info-border: hsl(213 97% 87%);
+
+  /* Visualization palette */
+  --viz-0: hsl(9 41% 55%);   /* terracotta */
+  --viz-1: hsl(32 73% 69%);  /* amber */
+  --viz-2: hsl(196 13% 50%); /* slate blue */
+  --viz-3: hsl(19 46% 72%);  /* sand */
+  --viz-4: hsl(64 13% 45%);  /* olive */
+  --viz-5: hsl(356 32% 37%); /* burgundy */
+  --viz-6: hsl(210 1% 32%);  /* charcoal */
+
+  --viz-0-tint: hsl(9 30% 93%);
+  --viz-1-tint: hsl(32 50% 94%);
+  --viz-2-tint: hsl(196 10% 93%);
+  --viz-3-tint: hsl(19 32% 94%);
+  --viz-4-tint: hsl(64 9% 93%);
+  --viz-5-tint: hsl(356 22% 93%);
+  --viz-6-tint: hsl(210 2% 93%);
+
+  /* Type */
+  --font-display: 'Lora', Georgia, serif;
+  --font-sans: 'Inter', system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+  --font-mono: 'JetBrains Mono', SFMono-Regular, Menlo, Consolas, monospace;
+
+  /* Radii + spacing */
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 10px;
+  --shadow-input: 0 1px 1px 0 rgba(0, 0, 0, 0.05);
+  --shadow-card: 0 1px 2px 0 rgba(0, 0, 0, 0.04);
+
+  --content-max: 1200px;
+}
