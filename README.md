@@ -8,8 +8,8 @@ An interactive, password-gated analytics dashboard reporting on the accuracy and
 
 The site is gated by a client-side SHA-256 password check. This is access friction, not authentication.
 
-- Password: `marcus2026`
-- Hash (embedded in `docs/assets/js/lock.js`): `2f20e672b412b098b18fb06895a36e9a57c2e36d4b7ad49a83adf58a27b53a7e`
+- Password: `ainative`
+- Hash (embedded in `docs/assets/js/lock.js`): `0c3a0b2dd2dc0dbc5277d59904abebe8ff3424fe14156fdef892567f35d67c1d`
 - Session: after one successful unlock the dashboard stays open for the rest of the browser session (`sessionStorage`).
 
 To change the password, generate a new hash:

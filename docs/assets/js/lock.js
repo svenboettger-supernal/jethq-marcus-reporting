@@ -1,5 +1,5 @@
-// SHA-256 of "marcus2026". Documented in README under "Access".
-const PASSWORD_HASH = "2f20e672b412b098b18fb06895a36e9a57c2e36d4b7ad49a83adf58a27b53a7e";
+// SHA-256 of "ainative". Documented in README under "Access".
+const PASSWORD_HASH = "0c3a0b2dd2dc0dbc5277d59904abebe8ff3424fe14156fdef892567f35d67c1d";
 const SESSION_KEY = "marcus_unlocked";
 
 async function sha256(text) {
