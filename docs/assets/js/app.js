@@ -135,13 +135,13 @@ if (document.getElementById('dashboard') && !document.getElementById('dashboard'
 function renderMeta() {
   const m = state.data.meta;
   const k = state.data.kpis;
-  // Validation period spans all rounds, not just the recent window.
+  // Review period spans all three rounds.
   const allStarts = state.data.round_summaries.map((r) => r.time_range.start).filter(Boolean);
   const allEnds = state.data.round_summaries.map((r) => r.time_range.end).filter(Boolean);
-  const periodStart = allStarts.length ? allStarts.sort()[0] : k.recent_window.start;
-  const periodEnd = allEnds.length ? allEnds.sort().slice(-1)[0] : k.recent_window.end;
+  const periodStart = allStarts.length ? allStarts.sort()[0] : (k.log_window && k.log_window.start);
+  const periodEnd = allEnds.length ? allEnds.sort().slice(-1)[0] : (k.log_window && k.log_window.end);
   document.getElementById('meta-period').textContent = fmtDateRange(periodStart, periodEnd);
-  document.getElementById('meta-sample').textContent = `${fmtNumber(k.overall_denominator)} curated validations · ${fmtNumber(k.total_updates_recent_window)} recent updates`;
+  document.getElementById('meta-sample').textContent = `${fmtNumber(k.total_validated_all_rounds)} rows reviewed across 3 rounds · ${fmtNumber(k.total_updates_log)} updates in Marcus's log`;
   const gen = new Date(m.generated_at);
   const genStr = gen.toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' });
   document.getElementById('meta-generated').textContent = genStr;
@@ -153,15 +153,15 @@ function renderKPIs() {
   const items = [
     {
       cls: 'headline',
-      label: 'Overall accuracy',
+      label: 'Round 3 accuracy',
       value: fmtPercent(k.overall_accuracy_pct),
-      sub: `${fmtNumber(k.overall_numerator)} / ${fmtNumber(k.overall_denominator)} curated`,
+      sub: `${fmtNumber(k.overall_numerator)} / ${fmtNumber(k.overall_denominator)} reviewed`,
       delta: `+${fmtPercent(k.improvement_pp_vs_round_1, 2)} pp vs. Round 1`,
     },
-    { label: 'Updates processed', value: fmtNumber(k.total_updates_recent_window), sub: 'in the most recent window' },
-    { label: 'Validated samples', value: fmtNumber(k.total_validated_all_rounds), sub: 'across all rounds' },
+    { label: 'Updates in Marcus\'s log', value: fmtNumber(k.total_updates_log), sub: 'all-time, appended live' },
+    { label: 'Rows reviewed', value: fmtNumber(k.total_validated_all_rounds), sub: 'across the three rounds' },
     { label: 'Distinct classifications', value: fmtNumber(k.distinct_classifications_uv), sub: `${fmtNumber(k.distinct_classifications_all)} in classifier ruleset` },
-    { label: 'Unique aircraft touched', value: fmtNumber(k.distinct_aircraft_uv), sub: 'in the recent window' },
+    { label: 'Unique aircraft touched', value: fmtNumber(k.distinct_aircraft_uv), sub: 'in Marcus\'s log' },
   ];
   const grid = document.getElementById('kpi-grid');
   grid.innerHTML = items.map((it) => `
@@ -180,7 +180,7 @@ function renderKPIs() {
 
 /* ---------- Render: filters ---------- */
 function renderFilters() {
-  const rounds = ['Round 1', 'Round 2', 'Update Validations', 'Final'];
+  const rounds = ['Round 1', 'Round 2', 'Round 3'];
   const classes = Array.from(new Set([
     ...state.data.classification_breakdown.map((x) => x.classification),
     ...state.data.classification_accuracy.map((x) => x.classification),
@@ -261,11 +261,13 @@ function resizeCharts() {
 function renderTrajectoryChart() {
   const chart = ensureChart('chart-trajectory'); if (!chart) return;
   const rs = state.data.round_summaries.filter((r) => r.validated > 0);
+  const initial = state.data.round_3_initial;
   const filt = state.filters.round;
   const labels = rs.map((r) => r.name);
   const strict = rs.map((r) => r.strict_accuracy_pct);
   const weighted = rs.map((r) => r.weighted_accuracy_pct);
-  const sampleN = rs.map((r) => r.validated);
+  // Researcher pre-review marker only on Round 3.
+  const researcherSeries = labels.map((l) => l === 'Round 3' && initial ? initial.strict_accuracy_pct : null);
 
   chart.setOption({
     ...ECHART_BASE,
@@ -276,10 +278,14 @@ function renderTrajectoryChart() {
         if (!params || !params.length) return '';
         const i = params[0].dataIndex;
         const r = rs[i];
-        return `<div style="font-weight:500;margin-bottom:6px;">${escapeHtml(r.name)}</div>
-                <div>Strict: <strong>${fmtPercent(r.strict_accuracy_pct)}</strong></div>
+        let html = `<div style="font-weight:500;margin-bottom:6px;">${escapeHtml(r.name)}</div>
+                <div>Strict (post-Supernal review): <strong>${fmtPercent(r.strict_accuracy_pct)}</strong></div>
                 <div>Weighted: <strong>${fmtPercent(r.weighted_accuracy_pct)}</strong></div>
                 <div style="margin-top:6px;color:${VIZ.muted};">Sample n=${fmtNumber(r.validated)} · Correct ${r.correct} · Half ${r.half_correct} · Incorrect ${r.incorrect}</div>`;
+        if (r.name === 'Round 3' && initial) {
+          html += `<div style="margin-top:6px;padding-top:6px;border-top:1px solid ${VIZ.border};color:${VIZ.muted};">Researcher pre-review: <strong>${fmtPercent(initial.strict_accuracy_pct)}</strong> (${initial.correct} Correct, ${initial.half_correct} Half, ${initial.incorrect} Incorrect)</div>`;
+        }
+        return html;
       },
     },
     legend: { top: 4, right: 8, textStyle: { color: VIZ.muted, fontSize: 12 }, icon: 'roundRect' },
@@ -298,7 +304,7 @@ function renderTrajectoryChart() {
     series: [
       {
         name: 'Strict accuracy', type: 'line', data: strict,
-        smooth: false, symbol: 'circle', symbolSize: 9,
+        smooth: false, symbol: 'circle', symbolSize: 10,
         lineStyle: { color: VIZ.base[2], width: 2 },
         itemStyle: { color: VIZ.base[2], borderColor: VIZ.card, borderWidth: 2 },
         areaStyle: { color: 'hsla(196,13%,50%,0.08)' },
@@ -317,24 +323,19 @@ function renderTrajectoryChart() {
         itemStyle: { color: VIZ.base[1] },
       },
       {
-        name: 'Sample size', type: 'bar', yAxisIndex: 0, data: sampleN.map(() => 0),
-        tooltip: { show: false }, silent: true,
+        name: 'Researcher pre-review (R3)',
+        type: 'scatter',
+        data: researcherSeries.map((v) => v === null ? '-' : v),
+        symbol: 'diamond', symbolSize: 11,
+        itemStyle: { color: VIZ.muted, borderColor: VIZ.card, borderWidth: 1.5 },
+        label: {
+          show: true, position: 'bottom',
+          formatter: (p) => p.value === '-' ? '' : `${fmtPercent(p.value)} raw`,
+          color: VIZ.muted, fontSize: 11,
+        },
       },
     ],
-    graphic: rs.map((r, i) => ({
-      type: 'text', left: 'center', top: 'bottom',
-      style: {
-        text: `n=${r.validated}`,
-        fontFamily: 'JetBrains Mono, monospace', fontSize: 10, fill: VIZ.muted,
-      },
-      position: [getXPos(chart, i, labels.length), chart.getHeight() - 18],
-    })),
   });
-}
-function getXPos(chart, i, total) {
-  const w = chart.getWidth() - 56 - 24;
-  const step = w / Math.max(1, total - 1);
-  return 56 + i * step;
 }
 
 function renderVolumeChart() {
@@ -526,7 +527,29 @@ function renderAccuracyByClassChart() {
 }
 
 /* ---------- Narrative ---------- */
+function renderResolutionStrip() {
+  const fr = state.data.flag_resolution;
+  if (!fr) return;
+  const strip = document.getElementById('resolution-strip');
+  if (!strip) return;
+  const stats = [
+    { label: 'Rows in Round 3 sample', value: fmtNumber(fr.sample_size), sub: 'reviewed by both passes' },
+    { label: 'Researcher pre-review accuracy', value: fmtPercent(fr.researcher_strict_accuracy_pct), sub: `${fmtNumber(fr.researcher_correct)} Correct · ${fmtNumber(fr.researcher_flagged)} flagged` },
+    { label: 'Flags reverted to Correct', value: `${fmtNumber(fr.flags_reverted_to_correct)} of ${fmtNumber(fr.researcher_flagged)}`, sub: 'after Supernal re-reviewed each one' },
+    { label: 'Confirmed problems', value: fmtNumber(fr.supernal_confirmed_problems), sub: 'remaining after re-review' },
+    { label: 'Final accuracy (Round 3)', value: fmtPercent(fr.supernal_strict_accuracy_pct), sub: `${fmtNumber(fr.supernal_correct)} / ${fmtNumber(fr.sample_size)}` },
+  ];
+  strip.innerHTML = stats.map((s) => `
+    <div class="resolution-stat">
+      <div class="resolution-label">${escapeHtml(s.label)}</div>
+      <div class="resolution-value">${escapeHtml(s.value)}</div>
+      <div class="resolution-sub">${escapeHtml(s.sub)}</div>
+    </div>
+  `).join('');
+}
+
 function renderNarrative() {
+  renderResolutionStrip();
   const items = state.data.narrative_examples || [];
   const intros = {
     'JetNet sync lag': {

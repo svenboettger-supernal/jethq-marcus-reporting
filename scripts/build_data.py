@@ -313,22 +313,31 @@ def main() -> None:
     df_r1 = sheets["Validations Round 1"]
     df_class = sheets["Classifications"]
 
+    # Three review rounds. "Update Validations" is Marcus's running log of every update —
+    # not a review round. Its `Validation` column holds the raw researcher verdicts for
+    # Round 3 rows, before Supernal's resolution pass; Round 3 itself ("Final List of
+    # Validations") holds Supernal's post-review verdicts.
     rounds = [
         ("Round 1", df_r1, "Notes"),
         ("Round 2", df_r2, "Notes"),
-        ("Update Validations", df_uv, "JetHQ Notes"),
-        ("Final", df_final, "JetHQ Notes"),
+        ("Round 3", df_final, "JetHQ Notes"),
     ]
 
     round_summaries = [build_round_summary(name, df) for name, df, _ in rounds]
     validated_rows = build_validated_rows(rounds)
 
-    # Pull narrative examples *before* we drop the round=Final inception (we want UV rows for narrative).
-    uv_validated = [r for r in validated_rows if r["round"] == "Update Validations"]
-    narrative = pick_narrative_examples(uv_validated)
+    # Round 3 researcher-pre-review numbers come from UV's validated subset.
+    uv_initial = build_round_summary("Round 3 (researcher pre-review)", df_uv)
 
-    # Headline numbers come from the Final round.
-    final_summary = next(r for r in round_summaries if r["name"] == "Final")
+    # Narrative examples come from UV rows where the raw researcher verdict differs
+    # from the final Supernal verdict — these are the flags that reverted.
+    uv_validated_rows = build_validated_rows([("Update Validations (raw researcher verdicts)", df_uv, "JetHQ Notes")])
+    narrative = pick_narrative_examples(uv_validated_rows)
+
+    # Headline numbers come from Round 3 (curated post-review).
+    r3_summary = next(r for r in round_summaries if r["name"] == "Round 3")
+    r1_summary = next(r for r in round_summaries if r["name"] == "Round 1")
+    improvement_pp = round(r3_summary["strict_accuracy_pct"] - r1_summary["strict_accuracy_pct"], 2)
 
     distinct_aircraft = df_uv["Id"].dropna().nunique() if "Id" in df_uv.columns else 0
     distinct_classes_uv = (
@@ -336,12 +345,25 @@ def main() -> None:
     )
     distinct_classes_all = df_class["Classified as"].dropna().nunique()
 
-    # Improvement vs. Round 1
-    r1_summary = next(r for r in round_summaries if r["name"] == "Round 1")
-    improvement_pp = round(final_summary["strict_accuracy_pct"] - r1_summary["strict_accuracy_pct"], 2)
+    # Researcher-to-Supernal flag resolution, expressed at the sample level.
+    # The researcher pass and the Supernal pass each reviewed the same 127 sample rows
+    # (UV-validated subset == Round 3 row set). Compare the verdict mixes directly.
+    researcher_correct = uv_initial["correct"]
+    researcher_flags = uv_initial["half_correct"] + uv_initial["incorrect"]
+    supernal_correct = r3_summary["correct"]
+    supernal_incorrect = r3_summary["incorrect"] + r3_summary["half_correct"]
+    flag_resolution = {
+        "sample_size": uv_initial["validated"],
+        "researcher_correct": researcher_correct,
+        "researcher_flagged": researcher_flags,
+        "supernal_correct": supernal_correct,
+        "supernal_confirmed_problems": supernal_incorrect,
+        "flags_reverted_to_correct": researcher_flags - supernal_incorrect,
+        "researcher_strict_accuracy_pct": uv_initial["strict_accuracy_pct"],
+        "supernal_strict_accuracy_pct": r3_summary["strict_accuracy_pct"],
+    }
 
-    # Total updates Marcus processed in the most recent window
-    total_updates_recent = int(len(df_uv))
+    total_updates = int(len(df_uv))
 
     payload = {
         "meta": {
@@ -351,21 +373,23 @@ def main() -> None:
             "headline_label": "Marcus accuracy",
         },
         "kpis": {
-            "overall_accuracy_pct": final_summary["strict_accuracy_pct"],
-            "overall_numerator": final_summary["correct"],
-            "overall_denominator": final_summary["validated"],
-            "total_updates_recent_window": total_updates_recent,
-            "total_validated_all_rounds": sum(r["validated"] for r in round_summaries if r["name"] != "Final"),
+            "overall_accuracy_pct": r3_summary["strict_accuracy_pct"],
+            "overall_numerator": r3_summary["correct"],
+            "overall_denominator": r3_summary["validated"],
+            "total_updates_log": total_updates,
+            "total_validated_all_rounds": sum(r["validated"] for r in round_summaries),
             "distinct_classifications_uv": int(distinct_classes_uv),
             "distinct_classifications_all": int(distinct_classes_all),
             "distinct_aircraft_uv": int(distinct_aircraft),
             "improvement_pp_vs_round_1": improvement_pp,
-            "recent_window": {
-                "start": next(r["time_range"]["start"] for r in round_summaries if r["name"] == "Update Validations"),
-                "end": next(r["time_range"]["end"] for r in round_summaries if r["name"] == "Update Validations"),
+            "log_window": {
+                "start": min(parse_time(t) for t in df_uv["Time"].dropna() if parse_time(t)),
+                "end": max(parse_time(t) for t in df_uv["Time"].dropna() if parse_time(t)),
             },
         },
         "round_summaries": round_summaries,
+        "round_3_initial": uv_initial,
+        "flag_resolution": flag_resolution,
         "daily_volume": build_daily_volume(df_uv),
         "classification_breakdown": build_classification_breakdown(df_uv),
         "classification_accuracy": build_classification_accuracy(validated_rows),

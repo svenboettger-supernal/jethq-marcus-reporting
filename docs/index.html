@@ -76,11 +76,11 @@
     <section id="trajectory" class="report-section">
       <header class="section-head">
         <h2>Trajectory</h2>
-        <p class="lede">Marcus improved across three validation rounds. Hover any point to see the sample mix.</p>
+        <p class="lede">Three review rounds: JetHQ researchers reviewed a sample of Marcus's updates, Supernal addressed the issues they raised, then we reviewed again. Round 3 is the most recent and the basis of the 99.21% headline.</p>
       </header>
       <div class="chart-wrap">
         <h3>Accuracy across validation rounds</h3>
-        <p class="chart-sub">Strict accuracy = Correct / validated. Weighted accuracy gives half-credit to Half Correct.</p>
+        <p class="chart-sub">Strict accuracy = Correct / validated. Weighted accuracy gives half-credit to Half Correct. The grey marker on Round 3 shows the researcher pre-review accuracy before Supernal resolved their flags.</p>
         <div id="chart-trajectory" class="chart-canvas" style="min-height:380px;"></div>
       </div>
     </section>
@@ -89,11 +89,11 @@
     <section id="volume" class="report-section">
       <header class="section-head">
         <h2>Daily volume</h2>
-        <p class="lede">Every update Marcus made in the most recent window, by day and classification category.</p>
+        <p class="lede">Marcus appends every update he makes to a running log. Below is the daily breakdown, colored by top classifications.</p>
       </header>
       <div class="chart-wrap">
         <h3>Updates per day, colored by top classifications</h3>
-        <p class="chart-sub">Drag a date range on the chart to zoom. Other classifications are grouped into "other".</p>
+        <p class="chart-sub">All 5,945 updates Marcus has logged. Drag a date range on the slider to zoom. Less common classifications are grouped into "other".</p>
         <div id="chart-volume" class="chart-canvas" style="min-height:420px;"></div>
       </div>
     </section>
@@ -128,8 +128,9 @@
     <section id="why" class="report-section">
       <header class="section-head">
         <h2>Why flags get reverted</h2>
-        <p class="lede">Most flags raised by JetHQ researchers were reclassified as Correct after Supernal review. Two patterns explain almost all of them.</p>
+        <p class="lede">In Round 3, JetHQ researchers flagged some updates as wrong. Supernal then went back through each one. Most of the flags reverted to Correct — for two recurring reasons.</p>
       </header>
+      <div class="resolution-strip" id="resolution-strip"></div>
       <div class="narrative-grid" id="narrative-grid"></div>
     </section>
 
@@ -235,11 +236,11 @@
 
           <dt>Validation rounds</dt>
           <dd>
-            <strong>Round 1</strong> (Jan): smallest, earliest sample (505 rows in sheet, 74 reviewed).
-            <strong>Round 2</strong> (Feb–Mar): broader sample (8,234 rows in sheet, 53 reviewed).
-            <strong>Update Validations</strong> (Mar–May): most recent full Marcus output (5,945 rows in sheet, 127 reviewed).
-            <strong>Final List</strong>: curated, post-QC list of 127 reviewed items, re-reviewed by Supernal. This is the 99.21% headline scorecard.
+            Three review rounds total. <strong>Round 1</strong> (Jan): first JetHQ review pass, 505 rows in sheet, 74 reviewed. After the round, Supernal addressed the issues researchers had flagged. <strong>Round 2</strong> (Feb–Mar): second pass, 8,234 rows in sheet, 53 reviewed. Same loop: researcher flags reviewed, fixes shipped. <strong>Round 3</strong> (Apr–May): most recent pass, 127 reviewed. Supernal then re-reviewed every researcher flag and produced the final list. The 99.21% headline is Round 3 post-Supernal-review.
           </dd>
+
+          <dt>The "Update Validations" sheet</dt>
+          <dd>Not a separate validation round. It is the operational log Marcus appends every update he makes to (5,945 entries to date). The 127 rows in that sheet that carry a Validation verdict are the same 127 rows reviewed in Round 3; the verdicts in that column are the <em>raw researcher</em> verdicts (92.91% strict) before Supernal worked through them. The name is kept as-is to avoid disrupting upstream workflows.</dd>
 
           <dt>Verdict definitions</dt>
           <dd>
@@ -262,11 +263,11 @@
           <dt>Data quirks we cleaned</dt>
           <dd>Stray <code>Good/Ok/Poor/Score</code> values in the New Market Status column and numeric leakage in the Validation column (single-digit counts, decimal fractions, status strings) were filtered out. Only the four valid verdict strings are counted.</dd>
 
-          <dt>Sampling bias</dt>
-          <dd>The validated samples are not random — they are the rows researchers chose to flag. Reported per-classification accuracy reflects flagged outcomes, not Marcus's overall behavior on that classification. Classifications with fewer than five validated samples are marked low-sample.</dd>
+          <dt>Sampling</dt>
+          <dd>Researchers reviewed a sample of Marcus's updates in each round — 74 in Round 1, 53 in Round 2, 127 in Round 3 (254 reviewed in total). The sample is not random — it is the rows JetHQ researchers chose to look at. Per-classification accuracy reflects the reviewed slice, not Marcus's overall behavior on that classification. Classifications with fewer than five validated samples are marked low-sample.</dd>
 
           <dt>What 99.21% does and does not mean</dt>
-          <dd>It means: of 127 updates that went through the full QC loop (researcher flag → Supernal review), 126 were Correct. It does <em>not</em> claim that Marcus is 99.21% accurate on every alert it processes — for the broader 5,945-row recent window, only ~2% was hand-validated.</dd>
+          <dd>It means: of 127 Round 3 updates that went through the full review loop (researcher pass → Supernal resolution), 126 were Correct. It does <em>not</em> claim Marcus is 99.21% accurate on every one of the 5,945 updates in his running log — that broader population has not been hand-validated end-to-end.</dd>
         </dl>
       </div>
     </section>
