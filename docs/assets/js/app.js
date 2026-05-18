@@ -330,7 +330,7 @@ function renderTrajectoryChart() {
         itemStyle: { color: VIZ.muted, borderColor: VIZ.card, borderWidth: 1.5 },
         label: {
           show: true, position: 'bottom',
-          formatter: (p) => p.value === '-' ? '' : `${fmtPercent(p.value)} raw`,
+          formatter: (p) => p.value === '-' ? '' : fmtPercent(p.value),
           color: VIZ.muted, fontSize: 11,
         },
       },
